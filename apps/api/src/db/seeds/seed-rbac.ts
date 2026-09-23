@@ -91,9 +91,22 @@ async function seed() {
     roleId: roleIdByName.get("owner")!,
   });
 
-  console.log("Seed complete.");
-  console.log("Login with username: admin / password: ChangeMe123!");
-  process.exit(0);
+    console.log("Seeding cashier user...");
+  const cashierPasswordHash = await argon2.hash("CashierPass123!");
+  const [cashierUser] = await db
+    .insert(users)
+    .values({
+      username: "cashier1",
+      passwordHash: cashierPasswordHash,
+      fullName: "Test Cashier",
+      isActive: true,
+    })
+    .returning();
+
+  await db.insert(userRoles).values({
+    userId: cashierUser.id,
+    roleId: roleIdByName.get("cashier")!,
+  });
 }
 
 seed().catch((err) => {
