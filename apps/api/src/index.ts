@@ -5,6 +5,7 @@ import jwt from "@fastify/jwt";
 import { sql } from "drizzle-orm";
 import { db } from "./db/client.js";
 import { authRoutes } from "./routes/auth.js";
+import { authenticate, requirePermission } from "./plugins/auth-guard.js";
 
 const app = Fastify({ logger: true });
 
@@ -32,3 +33,10 @@ app.listen({ port: Number(process.env.PORT) || 4000, host: "0.0.0.0" }, (err) =>
     process.exit(1);
   }
 });
+app.get(
+  "/admin/ping",
+  { preHandler: [authenticate, requirePermission("user.manage")] },
+  async () => {
+    return { status: "ok", message: "You have user.manage permission" };
+  }
+);
