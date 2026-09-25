@@ -60,6 +60,11 @@ function App() {
         <p>Username: {user.username}</p>
         <p>Roles: {user.roles.join(", ")}</p>
         <p>Permissions: {user.permissions.join(", ")}</p>
+
+        {user.permissions.includes("user.manage") && (
+          <button style={{ marginRight: 8 }}>Manage Users (admin only)</button>
+        )}
+
         <button onClick={handleLogout}>Log out</button>
       </div>
     );
