@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",
-    "seed:rbac": "tsx src/db/seeds/seed-rbac.ts"
+    "seed:rbac": "tsx src/db/seeds/seed-rbac.ts",
+    "seed:demo": "tsx src/db/seeds/seed-demo-data.ts"
   },
   "keywords": [],
   "author": "",
