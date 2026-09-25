@@ -6,12 +6,16 @@ import { sql } from "drizzle-orm";
 import { db } from "./db/client.js";
 import { authRoutes } from "./routes/auth.js";
 import { authenticate, requirePermission } from "./plugins/auth-guard.js";
+import { planRoutes } from "./routes/plans.js";
+import { subscriberRoutes } from "./routes/subscribers.js";
 
 const app = Fastify({ logger: true });
 
 app.register(cors, { origin: true });
 app.register(jwt, { secret: process.env.JWT_SECRET! });
 app.register(authRoutes);
+app.register(planRoutes);
+app.register(subscriberRoutes);
 
 app.get("/health", async () => {
   return { status: "ok" };
