@@ -15,6 +15,13 @@
       "when": 1790152174872,
       "tag": "0001_ordinary_stardust",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790303512315,
+      "tag": "0002_curly_gravity",
+      "breakpoints": true
     }
   ]
 }
