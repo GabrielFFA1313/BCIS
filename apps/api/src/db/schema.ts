@@ -171,3 +171,96 @@ export const serviceAccountStatusHistory = pgTable("service_account_status_histo
   changedByUserId: integer("changed_by_user_id").references(() => users.id),
   changedAt: timestamp("changed_at").defaultNow().notNull(),
 });
+
+
+// ── Invoice Status ────────────────────────────────────────
+export const invoiceStatusEnum = pgEnum("invoice_status", [
+  "draft",
+  "unpaid",
+  "partially_paid",
+  "paid",
+  "overdue",
+  "void",
+  "credited",
+]);
+
+// ── Billing Cycles ──────────────────────────────────────────
+export const billingCycles = pgTable(
+  "billing_cycles",
+  {
+    id: serial("id").primaryKey(),
+    periodYear: integer("period_year").notNull(),
+    periodMonth: integer("period_month").notNull(), // 1-12
+    generatedAt: timestamp("generated_at").defaultNow().notNull(),
+    generatedByUserId: integer("generated_by_user_id").references(() => users.id),
+  },
+  (table) => ({
+    uniquePeriod: unique().on(table.periodYear, table.periodMonth),
+  })
+);
+
+// ── Invoices ──────────────────────────────────────────────
+import { unique } from "drizzle-orm/pg-core"; // add this to your import line too
+
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: serial("id").primaryKey(),
+    invoiceNumber: varchar("invoice_number", { length: 30 }).notNull().unique(),
+    serviceAccountId: integer("service_account_id")
+      .notNull()
+      .references(() => serviceAccounts.id),
+    billingCycleId: integer("billing_cycle_id")
+      .notNull()
+      .references(() => billingCycles.id),
+    subscriptionCharge: numeric("subscription_charge", { precision: 10, scale: 2 }).notNull(),
+    fees: numeric("fees", { precision: 10, scale: 2 }).notNull().default("0"),
+    discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
+    total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    status: invoiceStatusEnum("status").notNull().default("unpaid"),
+    dueDate: date("due_date").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueServiceAccountPeriod: unique().on(table.serviceAccountId, table.billingCycleId),
+  })
+);
+
+// ── Invoice Items ─────────────────────────────────────────
+export const invoiceItems = pgTable("invoice_items", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id")
+    .notNull()
+    .references(() => invoices.id, { onDelete: "cascade" }),
+  description: varchar("description", { length: 200 }).notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+});
+
+// ── Adjustments ───────────────────────────────────────────
+export const adjustmentTypeEnum = pgEnum("adjustment_type", ["debit", "credit"]);
+
+export const adjustments = pgTable("adjustments", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id")
+    .notNull()
+    .references(() => invoices.id),
+  type: adjustmentTypeEnum("type").notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ── Ledger Entries ────────────────────────────────────────
+export const ledgerEntries = pgTable("ledger_entries", {
+  id: serial("id").primaryKey(),
+  subscriberId: integer("subscriber_id")
+    .notNull()
+    .references(() => subscribers.id),
+  serviceAccountId: integer("service_account_id").references(() => serviceAccounts.id),
+  entryDate: timestamp("entry_date").defaultNow().notNull(),
+  reference: varchar("reference", { length: 50 }).notNull(), // e.g. invoice or receipt number
+  description: varchar("description", { length: 200 }).notNull(),
+  debit: numeric("debit", { precision: 10, scale: 2 }).notNull().default("0"),
+  credit: numeric("credit", { precision: 10, scale: 2 }).notNull().default("0"),
+});
