@@ -9,6 +9,7 @@ import { authenticate, requirePermission } from "./plugins/auth-guard.js";
 import { planRoutes } from "./routes/plans.js";
 import { subscriberRoutes } from "./routes/subscribers.js";
 import { serviceAccountRoutes } from "./routes/service-accounts.js";
+import { billingRoutes } from "./routes/billing.js";
 
 const app = Fastify({ logger: true });
 
@@ -18,6 +19,7 @@ app.register(authRoutes);
 app.register(planRoutes);
 app.register(subscriberRoutes);
 app.register(serviceAccountRoutes);
+app.register(billingRoutes);
 
 app.get("/health", async () => {
   return { status: "ok" };
