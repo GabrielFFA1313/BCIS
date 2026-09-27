@@ -136,11 +136,10 @@ export async function billingRoutes(app: FastifyInstance) {
       if (status) conditions.push(eq(invoices.status, status as any));
       if (serviceAccountId) conditions.push(eq(invoices.serviceAccountId, Number(serviceAccountId)));
 
-      const query = db.select().from(invoices).orderBy(desc(invoices.createdAt));
-      if (conditions.length > 0) {
-        return query.where(and(...conditions));
+           if (conditions.length > 0) {
+        return db.select().from(invoices).where(and(...conditions)).orderBy(desc(invoices.createdAt));
       }
-      return query;
+      return db.select().from(invoices).orderBy(desc(invoices.createdAt));
     }
   );
 
