@@ -12,6 +12,7 @@ import {
 } from "../db/schema.js";
 import { authenticate, requirePermission } from "../plugins/auth-guard.js";
 import { generateBillingSchema } from "../validation/schemas.js";
+import { asc, desc, lt } from "drizzle-orm";
 
 function computeDueDate(periodYear: number, periodMonth: number, billingDay: number): string {
   // due date is the billing day in the billing period's month
@@ -123,6 +124,82 @@ export async function billingRoutes(app: FastifyInstance) {
         app.log.error(err);
         return reply.status(500).send({ error: "Could not generate billing" });
       }
+    }
+  );
+
+  app.get<{ Querystring: { status?: string; serviceAccountId?: string } }>(
+    "/invoices",
+    { preHandler: [authenticate, requirePermission("billing.view")] },
+    async (request) => {
+      const { status, serviceAccountId } = request.query;
+      const conditions = [];
+      if (status) conditions.push(eq(invoices.status, status as any));
+      if (serviceAccountId) conditions.push(eq(invoices.serviceAccountId, Number(serviceAccountId)));
+
+      const query = db.select().from(invoices).orderBy(desc(invoices.createdAt));
+      if (conditions.length > 0) {
+        return query.where(and(...conditions));
+      }
+      return query;
+    }
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/invoices/:id",
+    { preHandler: [authenticate, requirePermission("billing.view")] },
+    async (request, reply) => {
+      const id = Number(request.params.id);
+      const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+      if (!invoice) {
+        return reply.status(404).send({ error: "Invoice not found" });
+      }
+
+      const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+
+      const today = new Date().toISOString().slice(0, 10);
+      if (
+        (invoice.status === "unpaid" || invoice.status === "partially_paid") &&
+        invoice.dueDate < today
+      ) {
+        const [updated] = await db
+          .update(invoices)
+          .set({ status: "overdue" })
+          .where(eq(invoices.id, id))
+          .returning();
+        return { ...updated, items };
+      }
+
+      return { ...invoice, items };
+    }
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/service-accounts/:id/ledger",
+    { preHandler: [authenticate, requirePermission("billing.view")] },
+    async (request, reply) => {
+      const serviceAccountId = Number(request.params.id);
+
+      const [account] = await db
+        .select()
+        .from(serviceAccounts)
+        .where(eq(serviceAccounts.id, serviceAccountId));
+      if (!account) {
+        return reply.status(404).send({ error: "Service account not found" });
+      }
+
+      const entries = await db
+        .select()
+        .from(ledgerEntries)
+        .where(eq(ledgerEntries.subscriberId, account.subscriberId))
+        .orderBy(asc(ledgerEntries.entryDate));
+
+      let balance = 0;
+      const withBalance = entries.map((entry) => {
+        balance += Number(entry.debit) - Number(entry.credit);
+        return { ...entry, balance: balance.toFixed(2) };
+      });
+
+      return withBalance;
     }
   );
 }
