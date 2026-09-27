@@ -9,7 +9,12 @@ interface Subscriber {
   status: string;
 }
 
-export function SubscribersPage() {
+interface SubscribersPageProps {
+  onSelectSubscriber: (id: number) => void;
+}
+
+export function SubscribersPage({ onSelectSubscriber }: SubscribersPageProps) {
+
   const { token, hasPermission } = useAuth();
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +185,11 @@ export function SubscribersPage() {
             </tr>
           ) : (
             subscribers.map((s) => (
-              <tr key={s.id} style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <tr
+                key={s.id}
+                onClick={() => onSelectSubscriber(s.id)}
+                style={{ borderBottom: "1px solid #E5E7EB", cursor: "pointer" }}
+              >
                 <td style={{ padding: 8 }}>{s.accountNumber}</td>
                 <td style={{ padding: 8 }}>{s.fullName}</td>
                 <td style={{ padding: 8 }}>{s.contactNumber || "-"}</td>

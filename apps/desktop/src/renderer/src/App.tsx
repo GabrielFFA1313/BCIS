@@ -6,6 +6,7 @@ import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { SubscribersPage } from "./pages/SubscribersPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { GenerateBillingPage } from "./pages/GenerateBillingPage";
+import { SubscriberProfilePage } from "./pages/SubscriberProfilePage";
 
 function BillingSection() {
   const [tab, setTab] = useState<"generate" | "invoices">("invoices");
@@ -47,6 +48,21 @@ function BillingSection() {
   );
 }
 
+function SubscribersSection() {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  if (selectedId !== null) {
+    return (
+      <SubscriberProfilePage
+        subscriberId={selectedId}
+        onBack={() => setSelectedId(null)}
+      />
+    );
+  }
+
+  return <SubscribersPage onSelectSubscriber={setSelectedId} />;
+}
+
 function AppShell() {
   const { token } = useAuth();
   const [activePage, setActivePage] = useState<PageKey>("dashboard");
@@ -60,7 +76,7 @@ function AppShell() {
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
       <div style={{ flex: 1, background: "#F6F8FB" }}>
         {activePage === "dashboard" && <PlaceholderPage title="Dashboard" />}
-        {activePage === "subscribers" && <SubscribersPage />}
+        {activePage === "subscribers" && <SubscribersSection />}
         {activePage === "billing" && <BillingSection />}
         {activePage === "payments" && <PlaceholderPage title="Payments" />}
         {activePage === "collections" && <PlaceholderPage title="Collections" />}

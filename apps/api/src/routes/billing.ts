@@ -202,4 +202,23 @@ export async function billingRoutes(app: FastifyInstance) {
       return withBalance;
     }
   );
+    app.get<{ Params: { id: string } }>(
+    "/subscribers/:id/ledger",
+    { preHandler: [authenticate, requirePermission("billing.view")] },
+    async (request) => {
+      const subscriberId = Number(request.params.id);
+
+      const entries = await db
+        .select()
+        .from(ledgerEntries)
+        .where(eq(ledgerEntries.subscriberId, subscriberId))
+        .orderBy(asc(ledgerEntries.entryDate));
+
+      let balance = 0;
+      return entries.map((entry) => {
+        balance += Number(entry.debit) - Number(entry.credit);
+        return { ...entry, balance: balance.toFixed(2) };
+      });
+    }
+  );
 }
