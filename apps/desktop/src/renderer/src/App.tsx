@@ -74,7 +74,7 @@ function AppShell() {
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar activePage={activePage} onNavigate={setActivePage} />
-      <div style={{ flex: 1, background: "#F6F8FB" }}>
+       <div style={{ flex: 1, background: "#F6F8FB", height: "100vh", overflowY: "auto" }}>
         {activePage === "dashboard" && <PlaceholderPage title="Dashboard" />}
         {activePage === "subscribers" && <SubscribersSection />}
         {activePage === "billing" && <BillingSection />}
